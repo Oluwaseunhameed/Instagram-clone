@@ -5,7 +5,6 @@ const User = mongoose.model('User')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { JWT_SECRET } = require("../keys")
-const requireLogin = require('../middleware/requireLogin')
 
 router.get('/', (req, res) => res.send("HELLO!"))
 
@@ -13,28 +12,31 @@ router.post('/signup', (req, res) => {
     const { name, email, password } = req.body
     if (!email || !password || !name) {
         return res.status(422).json({ error: "please add all the fields" })
-    }
-    User.findOne({ email: email })
-        .then((savedUser) => {
-            if (savedUser) {
-                return res.status(422).json({ error: "user already exist with that email" })
-            }
-            bcrypt.hash(password, 12)
-                .then(hashedpassword => {
-                    const user = new User({
-                        email,
-                        password: hashedpassword,
-                        name
-                    })
-                    user.save()
-                        .then(user => {
-                            res.json({ message: "saved successfully" })
+    } else if (email.trim() === "" || password.trim() === "" || name.trim() === "") {
+        return res.status(422).json({ error: "Empty space is not allowed" })
+    } else {
+        User.findOne({ email: email })
+            .then((savedUser) => {
+                if (savedUser) {
+                    return res.status(422).json({ error: "user already exist with that email" })
+                }
+                bcrypt.hash(password, 12)
+                    .then(hashedpassword => {
+                        const user = new User({
+                            email,
+                            password: hashedpassword,
+                            name
                         })
-                        .catch(err => console.log(err))
-                })
+                        user.save()
+                            .then(user => {
+                                res.json({ message: "saved successfully" })
+                            })
+                            .catch(err => console.log(err))
+                    })
 
-        })
-        .catch(err => console.log(err))
+            })
+            .catch(err => console.log(err))
+    }
 })
 
 router.post('/signin', (req, res) => {
